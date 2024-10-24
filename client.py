@@ -9,7 +9,7 @@ from threading import Thread
 from tkinter import *
 from tkinter import ttk
 import sys
-
+#initial
 from gamedata import *
 import comm
 
