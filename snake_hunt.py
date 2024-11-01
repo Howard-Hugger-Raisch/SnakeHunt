@@ -104,8 +104,8 @@ class Snake():
     # Change direction of head of snake based on input
     def change_direction(self):
         keys = pygame.key.get_pressed()
-        if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and self.head.xdir != 1:
-            self.head.xdir = -1
+        if (keys[pygame.K_SPACE] or keys[pygame.K_a]) and self.head.xdir != 1:
+            self.head.xdir = -5
             self.head.ydir = 0
             self.turns[self.head.position[:]] = [self.head.xdir, self.head.ydir]
         elif (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and self.head.xdir != -1:
@@ -118,9 +118,8 @@ class Snake():
             self.turns[self.head.position[:]] = [self.head.xdir, self.head.ydir]
         elif (keys[pygame.K_DOWN] or keys[pygame.K_s]) and self.head.ydir != -1:
             self.head.xdir = 0
-            self.head.ydir = 1
+            self.head.ydir = 5
             self.turns[self.head.position[:]] = [self.head.xdir, self.head.ydir]
-    
     # Move every part of the snake.
     # If a part is at a position where a previous turn occurred, set its direction to the
     # direction of the previous turn.

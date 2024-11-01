@@ -9,6 +9,7 @@ from threading import Thread
 from tkinter import *
 from tkinter import ttk
 import sys
+import time
 #initial
 from gamedata import *
 import comm
@@ -300,6 +301,7 @@ class Game():
         ------
         None
         """
+
         if head.position[0] + self.camera[0]/2 > self.board[0]:
             off_map_width = (head.position[0] + self.camera[0]/2 - self.board[0])
             off_map_rect = (self.camera[0] - off_map_width, 0, off_map_width, self.camera[1])
@@ -341,6 +343,7 @@ class Game():
         w = rect[2] -3
         h = rect[3] -3 
         left_eye = right_eye = None
+        self.head = head
         if head.direction[0] == 0:  #parallel to y axis
             if head.direction[1] == 1:  #going down
                 left_eye = (x + w, y + h-3, 2, 4)
@@ -434,6 +437,24 @@ class Game():
             direction = (0, -1)
         if (keys[pygame.K_DOWN] or keys[pygame.K_s]):
             direction = (0, 1)
+        if (keys[pygame.K_SPACE]):
+            if self.head.direction[0] == 0:
+                if self.head.direction[1] == 1:
+                    direction = (0, 3)
+                else:
+                    direction = (0,-3)
+            if self.head.direction[1] == 0:
+                if self.head.direction[0] == 1:
+                    direction = (3,0)
+                else:
+                    direction = (-3,0)
+            #get current time upon input
+            #current time = current time after input
+            #cool down duration = time.delay
+
+
+
+
         return direction
 
     def game_loop(self):
