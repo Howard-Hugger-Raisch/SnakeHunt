@@ -1,6 +1,7 @@
 import os
 import socket
 import pickle
+import MusicRandomizer
 import pygame
 import pygame.font
 from pygame.locals import *
@@ -10,7 +11,7 @@ from tkinter import *
 from tkinter import ttk
 import sys
 import time
-#initial
+import numpy as np
 from gamedata import *
 import comm
 
@@ -253,6 +254,8 @@ class Game():
         self.board = (1000, 1000)
         self.client = client
         self.running = True
+        self.alteredValue = None
+        self.start_time = 0
         self.radio = radio
         self.leaderboard_font = pygame.font.Font(resource_path('./fonts/arial_bold.ttf'), 10)
 
@@ -427,6 +430,8 @@ class Game():
         Tuple[int, int] with the first element representing horizontal direction
         and the second element representing vertical direction.
         """
+
+
         direction = None
         keys = pygame.key.get_pressed()
         if (keys[pygame.K_LEFT] or keys[pygame.K_a]):
@@ -437,25 +442,30 @@ class Game():
             direction = (0, -1)
         if (keys[pygame.K_DOWN] or keys[pygame.K_s]):
             direction = (0, 1)
-        if (keys[pygame.K_SPACE]):
-            if self.head.direction[0] == 0:
-                if self.head.direction[1] == 1:
-                    direction = (0, 3)
-                else:
-                    direction = (0,-3)
-            if self.head.direction[1] == 0:
-                if self.head.direction[0] == 1:
-                    direction = (3,0)
-                else:
-                    direction = (-3,0)
-            #get current time upon input
-            #current time = current time after input
-            #cool down duration = time.delay
-
+        if pygame.time.get_ticks() - self.start_time >= 5000:
+            if (keys[pygame.K_SPACE]):
+                if self.head.direction[0] == 0:
+                    if self.head.direction[1] == 1:
+                        direction = (0, 3)
+                    else:
+                        direction = (0,-3)
+                if self.head.direction[1] == 0:
+                    if self.head.direction[0] == 1:
+                        direction = (3,0)
+                    else:
+                        direction = (-3,0)
+                self.start_time = pygame.time.get_ticks()
+                self.alteredValue = direction
 
 
 
         return direction
+
+
+    def alter_value(self):
+        temp_array = (np.array(self.alteredValue) / 3)
+        self.alteredValue = tuple(temp_array.tolist())
+        return self.alteredValue
 
     def game_loop(self):
         """
@@ -475,11 +485,15 @@ class Game():
                 if event.type == pygame.QUIT:
                     msg = pickle.dumps(comm.Message.QUIT)
                     self.running = False
-            
+            current_time = pygame.time.get_ticks()
             # Send input or quit signal to server
-            
             if msg == None:
-                msg = pickle.dumps(self.get_direction())
+                if self.alteredValue is not None and current_time - self.start_time >= 2000:
+                    msg = pickle.dumps(self.alter_value())
+                    self.start_time = current_time
+                    self.alteredValue = None
+                else:
+                    msg = pickle.dumps(self.get_direction())
             comm.send_data(self.client.socket, comm.size_as_bytes(msg))
             comm.send_data(self.client.socket, msg)
 
@@ -573,17 +587,37 @@ class MusicPlayer():
             self.pellet_sound.play()
         elif sound == comm.Message.SELF_COLLISION or sound == comm.Message.OTHER_COLLISION:
             self.self_collision.play()
+  # def is_track_busy(self):
+  #     return not pygame.mixer.get_busy()
 
+    def play_next(self):
+        self.current_index = (self.current_index + 1) % len(self.playlist)
+        next_track = self.playlist[self.current_index]
+        self.play_track(next_track)
 def main():
     client = Client()
     client.input_addr()
     if not client.connect():
         return
-
-    radio = MusicPlayer(resource_path("sound/snake_hunt.mp3"))
+    flag = True
+    music = ["snake_hunt.mp3","music.mp3"]
+    radio = None
+    i = None
+    while flag:
+        i = int(input("Original Background music(0) or randomized background music?(1)"))
+        try:
+            music[i]
+            flag = False
+        except:
+            print("Invalid input")
+            flag = True
+    if i == 1:
+        track =  MusicRandomizer.get_random_track()
+        track_id = track['id']
+        MusicRandomizer.download_track(track_id, track['title'])
+    radio = MusicPlayer(resource_path(f"sound/{music[i]}"))
     game = Game(client, radio)
     PauseMenu(game)
-
     game.start()
     game.game_loop()
 
